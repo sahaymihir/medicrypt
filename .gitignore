@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+medicrypt.db
+dummy_keys/
+dummy_keys_large/
+build_git.py
