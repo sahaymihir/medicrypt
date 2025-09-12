@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Medicrypt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #226da9;
+            --color-secondary: #edf6fa;
+            --color-accent: #28b094;
+            --color-text: #223543;
+            --color-subtle-text: #556077;
+            --color-border: #dde6ee;
+            --color-danger: #d9534f;
+            --radius: 12px;
+            --font-main: 'Inter', Arial, sans-serif;
+        }
+        body {
+            font-family: var(--font-main);
+            background: var(--color-secondary);
+            color: var(--color-text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-container {
+            background: #ffffff;
+            padding: 40px 35px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(34,109,169,0.1);
+            border: 1px solid var(--color-border);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .login-header {
+            margin-bottom: 30px;
+        }
+        .login-header i {
+            font-size: 3rem;
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: var(--color-subtle-text);
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: var(--color-primary);
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(34, 109, 169, 0.25);
+        }
+        /* Style for file input */
+        input[type="file"] {
+            border: 1px dashed var(--color-border);
+            padding: 10px;
+            cursor: pointer;
+        }
+        input[type="file"]:hover {
+            border-color: var(--color-primary);
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: var(--color-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+            margin-top: 10px; /* Add some space above button */
+        }
+        .btn-login:hover {
+            background-color: #1a5a8f;
+        }
+        .login-footer {
+            margin-top: 25px;
+            font-size: 0.9rem;
+            color: var(--color-subtle-text);
+        }
+        .login-footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        /* Flash Messages */
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid transparent; font-size: 0.95rem; text-align: left;}
+        .alert-danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .alert-info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+        @media (max-width: 480px) {
+            .login-container { padding: 30px 25px; }
+            .login-header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <i class="fas fa-lock"></i>
+            <h1>Medicrypt Login</h1>
+        </div>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="username">Username/Email</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="private_key_file">Private Key File (.pem)</label>
+                <input type="file" id="private_key_file" name="private_key_file" class="form-control" accept=".pem" required>
+            </div>
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+
+        <!-- REMOVED Register Link -->
+        <!--
+        <div class="login-footer">
+            Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+        </div>
+        -->
+    </div>
+</body>
+</html>

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MediCrypt{% endblock %}
+
+{% block content %}
+    <h1>Welcome, {{ session.username }}!</h1>
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+        <p>You are logged in as a <strong>{{ session.role }}</strong>.</p>
+        <p style="font-size: 0.9em; color: #555;">Your Attributes: {{ session.attributes }}</p>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+    <!--
+      SECTION 1: DOCTOR'S "CREATE RECORD" FORM
+    -->
+    {% if session.role == 'doctor' %}
+    <h2>Create New Encrypted Record</h2>
+    <form action="{{ url_for('create_record') }}" method="POST">
+        <div class="form-group">
+            <label for="patient_id">Select Patient</label>
+            <select id="patient_id" name="patient_id" class="form-group input" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; background: white;">
+                {% for p in patients %}
+                <option value="{{ p.user_id }}">{{ p.full_name }} (ID: ...{{ p.user_id[-6:] }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="record_type">Record Type</label>
+            <input type="text" id="record_type" name="record_type" value="clinical_note">
+        </div>
+
+        <div class="form-group">
+            <label for="content">Record Content (This will be AES-encrypted)</label>
+            <textarea id="content" name="content" rows="4" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: inherit;"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="policy">Access Policy (Example)</label>
+            <!-- Note: This is now just a string for our app to read -->
+            <input type="text" id="policy" name="policy" value="role:doctor AND department:neurosurgery">
+            <small style="font-size: 0.85em; color: #555;">
+                Try another: <strong>role:doctor AND department:diagnostics</strong>
+            </small>
+        </div>
+
+        <button type="submit" class="btn">Create and Encrypt Record</button>
+    </form>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+    {% endif %}
+
+
+    <!--
+      SECTION 2: ALL RECORDS
+    -->
+    <h2>All Medical Records in System</h2>
+    <div style="font-family: monospace; background: #eee; border-radius: 5px; padding: 10px;">
+        {% if records %}
+            {% for record in records %}
+            <div style="background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 5px solid #3498db;">
+                <strong>Record ID:</strong> ...{{ record.record_id[-12:] }}<br>
+                <strong>Record Type:</strong> {{ record.record_type }}<br>
+                <strong>Patient ID:</strong> ...{{ record.patient_user_id[-12:] }}<br>
+                <strong>Policy:</strong> <span style="color: #c0392b; font-weight: bold;">{{ record.policy }}</span><br>
+                <hr style="border: none; border-top: 1px dashed #ccc; margin: 10px 0;">
+                <strong>Decrypted Content:</strong>
+                <pre style="white-space: pre-wrap; word-wrap: break-word; font-size: 1.1em; color: {% if record.content == '[ACCESS DENIED]' %}#e74c3c{% else %}#2c3e50{% endif %}; margin-top: 5px; padding: 10px; background: #f9f9f9; border-radius: 3px;">{{ record.content }}</pre>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No medical records found in the system.</p>
+        {% endif %}
+    </div>
+
+{% endblock %}
+

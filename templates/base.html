@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MediCrypt{% endblock %}</title>
+    <!-- Basic styling shared across all pages -->
+    <style>
+        :root {
+            --color-primary-base: #3498db; /* Blue for general elements */
+            --color-secondary-base: #f4f7f6; /* Light gray background */
+            --color-text-base: #333;
+            --color-border-base: #ddd;
+            --color-success-bg: #d4edda;
+            --color-success-text: #155724;
+            --color-success-border: #c3e6cb;
+            --color-danger-bg: #f8d7da;
+            --color-danger-text: #721c24;
+            --color-danger-border: #f5c6cb;
+            --color-warning-bg: #fff3cd;
+            --color-warning-text: #856404;
+            --color-warning-border: #ffeeba;
+            --color-info-bg: #d1ecf1;
+            --color-info-text: #0c5460;
+            --color-info-border: #bee5eb;
+            --font-main-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --radius-base: 8px; /* Consistent border radius */
+        }
+        /* Minimal body styles - specific layouts handle backgrounds */
+        body {
+            font-family: var(--font-main-base);
+            color: var(--color-text-base);
+            margin: 0;
+            padding: 0; /* Remove default padding */
+            min-height: 100vh;
+        }
+        /* Basic styles needed by almost all pages */
+         h1 { color: #2c3e50; margin-top: 0; margin-bottom: 20px; }
+         .form-group { margin-bottom: 20px; }
+         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem;}
+         .form-group input[type="text"],
+         .form-group input[type="email"],
+         .form-group input[type="password"],
+         .form-group input[type="number"],
+         .form-group input[type="file"],
+         .form-group input[type="date"],
+         .form-group select,
+         .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid var(--color-border-base);
+            border-radius: var(--radius-base); box-sizing: border-box; font-size: 1rem; font-family: inherit;
+         }
+         .form-group small { font-size: 0.85em; color: #555; margin-top: 5px; display: block; }
+         .btn { display: inline-block; width: auto; padding: 10px 20px; background-color: var(--color-primary-base); color: white; border: none; border-radius: var(--radius-base); cursor: pointer; font-size: 1rem; font-weight: 500; text-align: center; text-decoration: none; transition: background-color 0.2s ease; }
+         .btn:hover { background-color: #2980b9; }
+         .btn-block { display: block; width: 100%; }
+         .btn-secondary { background-color: #95a5a6; }
+         .btn-secondary:hover { background-color: #7f8c8d; }
+         .alert { padding: 15px; margin-bottom: 20px; border-radius: var(--radius-base); border: 1px solid transparent; }
+         .alert-success { background-color: var(--color-success-bg); color: var(--color-success-text); border-color: var(--color-success-border); }
+         .alert-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); border-color: var(--color-danger-border); }
+         .alert-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning-border); }
+         .alert-info { background-color: var(--color-info-bg); color: var(--color-info-text); border-color: var(--color-info-border); }
+         .text-center { text-align: center; }
+         .link { color: var(--color-primary-base); text-decoration: none; }
+         .link:hover { text-decoration: underline; }
+
+    </style>
+    {% block head %}{% endblock %} {# Allow child templates to add more in head #}
+</head>
+<body>
+    {# This base template ONLY provides the block where content goes.
+       Layouts like headers/footers are handled by templates that extend this (e.g., admin_base.html)
+       or by the child template itself if it doesn't extend another layout.
+    #}
+    {% block content %}{% endblock %}
+
+    {# Optional: Block for JavaScript at the end of the body #}
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
