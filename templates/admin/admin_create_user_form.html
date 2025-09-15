@@ -1,0 +1,147 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Create New User{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <i class="fas fa-user-plus"></i>
+        <h1>Create New User</h1>
+    </div>
+
+    <!-- Flash messages specific to this form -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('admin_user_management.admin_create_user') }}">
+        <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="role_name">Role</label>
+            <select id="role_name" name="role_name" class="form-control" required onchange="toggleProfileFields()">
+                <option value="" disabled selected>Select Role...</option>
+                <option value="doctor">Doctor</option>
+                <option value="patient">Patient</option>
+                <option value="pharmacist">Pharmacist</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <!-- Role-Specific Fields Container -->
+        <div id="role_specific_fields">
+            <!-- Patient Fields -->
+            <div id="patient_fields" style="display: none;">
+                 <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" class="form-control" min="0">
+                 </div>
+                 <!-- === ADDED SMOKING STATUS DROPDOWN === -->
+                 <div class="form-group">
+                    <label for="smoking_status">Smoking Status</label>
+                    <select id="smoking_status" name="smoking_status" class="form-control">
+                        <option value="unknown" selected>Unknown</option>
+                        <option value="smoker">Smoker</option>
+                        <option value="non-smoker">Non-Smoker</option>
+                        <option value="former">Former Smoker</option>
+                    </select>
+                 </div>
+                 <!-- === END ADDED === -->
+            </div>
+
+            <!-- Doctor Fields -->
+            <div id="doctor_fields" style="display: none;">
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" name="department" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="specialty">Specialty</label>
+                    <input type="text" id="specialty" name="specialty" class="form-control">
+                </div>
+                 <div class="form-group">
+                    <label for="hospital_id">Hospital ID</label>
+                    <input type="text" id="hospital_id" name="hospital_id" class="form-control" value="KMC_Main">
+                 </div>
+            </div>
+
+            <!-- Pharmacist Fields -->
+            <div id="pharmacist_fields" style="display: none;">
+                <div class="form-group">
+                    <label for="pharmacy_name">Pharmacy Name</label>
+                    <input type="text" id="pharmacy_name" name="pharmacy_name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="license_number">License Number</label>
+                    <input type="text" id="license_number" name="license_number" class="form-control">
+                </div>
+            </div>
+
+            <!-- Admin Fields -->
+            <div id="admin_fields" style="display: none;">
+                 <div class="form-group">
+                    <label for="contact_email">Contact Email</label>
+                    <input type="email" id="contact_email" name="contact_email" class="form-control">
+                 </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+        </div>
+
+
+        <div class="button-group">
+             <button type="submit" class="btn btn-primary btn-submit">
+                <i class="fas fa-plus-circle"></i> Create User
+             </button>
+             <a href="{{ url_for('admin_logs.admin_dashboard_tiles') }}" class="btn btn-secondary">
+                 <i class="fas fa-times"></i> Cancel
+             </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleProfileFields() {
+        const role = document.getElementById('role_name').value;
+        const allFields = ['patient_fields', 'doctor_fields', 'pharmacist_fields', 'admin_fields'];
+
+        // Hide all specific field divs
+        allFields.forEach(id => {
+            const div = document.getElementById(id);
+            if (div) {
+                div.style.display = 'none';
+                // Remove 'required' from inputs inside hidden divs (optional, good practice)
+                div.querySelectorAll('input, select').forEach(input => input.removeAttribute('required'));
+            }
+        });
+
+        // Show the relevant field div and potentially add 'required' back
+        const fieldsToShowId = role + '_fields';
+        const fieldsToShowDiv = document.getElementById(fieldsToShowId);
+        if (fieldsToShowDiv) {
+            fieldsToShowDiv.style.display = 'block';
+            // Example: Add required back if needed, e.g., for department
+            // const deptInput = fieldsToShowDiv.querySelector('#department');
+            // if (deptInput) deptInput.setAttribute('required', '');
+        }
+    }
+
+    // Call on page load in case of errors/reloads where a role might already be selected
+    document.addEventListener('DOMContentLoaded', toggleProfileFields);
+</script>
+{% endblock %}

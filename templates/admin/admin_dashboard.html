@@ -1,0 +1,151 @@
+{% extends "admin_base.html" %} {# Use absolute path from template root #}
+
+{% block admin_content %}
+
+    <!-- Tiles view specific styles - MATCHING DOCTOR -->
+    <style>
+         .tiles-area {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* Match Doctor's 3 columns */
+            gap: 34px; /* Match Doctor's gap */
+            padding: 0 8px 36px 8px; /* Match Doctor's padding */
+            box-sizing: border-box;
+         }
+         .tile {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow); /* Use variable from admin_base (matched to Doctor) */
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+            border: 1.5px solid var(--color-border);
+            min-height: 160px; /* Adjusted height */
+            transition: box-shadow 0.17s, border 0.17s, transform 0.08s;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: var(--color-text);
+         }
+         .tile:hover {
+             border: 1.5px solid var(--color-primary);
+             box-shadow: 0 2px 26px #226da91c; /* Use Doctor hover shadow */
+             transform: translateY(-3px);
+             z-index:2;
+         }
+         .tile-header {
+             display:flex; align-items:center; gap:12px;
+             font-size:1.25rem; font-weight:600; /* Consistent size */
+             color:var(--color-primary);
+         }
+         .tile-header i {
+             color: var(--color-accent); /* Use variable from admin_base (matched to Doctor) */
+             font-size:1.17rem; /* Consistent size */
+             width: 24px; text-align: center;
+         }
+         .tile-details {
+             font-size: 1rem; /* Consistent size */
+             color:var(--color-text);
+             line-height:1.45; /* Consistent line height */
+             font-weight:400; flex:1; margin-top: 5px;
+         }
+         .tile-chevron {
+             color:var(--color-primary); position:absolute; right:20px;
+             top:36px; font-size:1.19rem; opacity: 0.6; transition: opacity 0.2s;
+         }
+         .tile:hover .tile-chevron { opacity: 1;}
+         /* Accessible Focus - Match Doctor */
+         .tile:focus-visible {
+             border:1.5px solid var(--color-accent);
+             box-shadow:0 2px 22px #28b09423; /* Doctor's accent focus shadow */
+             outline: 2px solid var(--color-accent); outline-offset: 2px;
+         }
+
+         /* Log list specific styles */
+        .log-filter-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;}
+        .log-filter-form select, .log-filter-form button { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--color-border); font-size: 0.95rem; }
+        .log-list { list-style: none; padding: 0; margin: 20px 0 0 0; max-height: 500px; overflow-y: auto; }
+        .log-item {
+           background: var(--color-subtle-bg); border: 1px solid var(--color-border);
+           border-left: 4px solid var(--color-accent); border-radius: 8px; padding: 12px 16px;
+           margin-bottom: 10px; font-family: monospace; font-size: 0.9em; line-height: 1.5; word-break: break-word;
+        }
+        .log-item strong { color: var(--color-primary); }
+        .log-item small { color: #667; display: block; margin-top: 4px; }
+
+        /* Responsive adjustments for tiles */
+         @media (max-width: 1024px) { .tiles-area { grid-template-columns: repeat(2, 1fr); gap: 22px; } }
+         @media (max-width: 768px) { .tiles-area { grid-template-columns: 1fr; } }
+
+    </style>
+
+    {# Conditionally render tiles or logs based on the 'view' variable #}
+    {% if view == 'tiles' %}
+
+        <main class="tiles-area" aria-label="Dashboard tiles">
+            <!-- Logs Tile -->
+            <a href="{{ url_for('admin_logs.view_logs') }}" class="tile" aria-label="Audit Logs">
+              <div class="tile-header"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Audit Logs</div>
+              <div class="tile-details">View system activity logs, filter by user role or action type, and monitor access patterns.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+
+            <!-- Insights Tile (Static) -->
+            <div class="tile" aria-label="System Insights (Coming Soon)" style="background: var(--color-subtle-bg); color: #889; opacity: 0.7; cursor: default;">
+              <div class="tile-header" style="color: #778;"><i class="fas fa-chart-pie" aria-hidden="true" style="color: #aaa;"></i> System Insights</div>
+              <div class="tile-details">Visualize system usage statistics, data access trends, and security metrics. (Coming Soon)</div>
+              {# No chevron for disabled tile #}
+            </div>
+
+            <!-- User Management Tile -->
+            <a href="{{ url_for('admin_user_management.create_user_form') }}" class="tile" aria-label="User Management">
+              <div class="tile-header"><i class="fas fa-users-cog" aria-hidden="true"></i> User Management</div>
+              <div class="tile-details">Create new user accounts for patients, doctors, pharmacists, or other administrators.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+        </main>
+
+    {% elif view == 'logs' %}
+
+        <main class="main-content-area" aria-label="Audit Log Details"> {# Apply standard content area style #}
+            <div class="view-header">
+                <a href="{{ url_for('admin_logs.admin_dashboard_tiles') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                <form method="GET" action="{{ url_for('admin_logs.view_logs') }}" class="log-filter-form">
+                    <select name="role_filter" aria-label="Filter logs by role">
+                        <option value="" {% if not role_filter %}selected{% endif %}>All Roles</option>
+                        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="doctor" {% if role_filter == 'doctor' %}selected{% endif %}>Doctor</option>
+                        <option value="patient" {% if role_filter == 'patient' %}selected{% endif %}>Patient</option>
+                        <option value="pharmacist" {% if role_filter == 'pharmacist' %}selected{% endif %}>Pharmacist</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+                </form>
+            </div>
+            <h2><i class="fas fa-clipboard-list" style="color: var(--color-accent); margin-right: 8px;"></i> Audit Log</h2>
+            {% if logs %}
+                <ul class="log-list">
+                    {% for log in logs %}
+                    <li class="log-item">
+                        <strong>ID:</strong> {{ log.log_id }} | <strong>Time:</strong> {{ log.timestamp[:19] }} | <strong>User:</strong> ...{{ log.user_id[-8:] if log.user_id else 'System' }} | <strong>Role:</strong> {{ log.role_name | capitalize if log.role_name else 'N/A' }}<br>
+                        <strong>Action:</strong> {{ log.action }} | {% if log.record_id %}<strong>Record:</strong> ...{{ log.record_id[-8:] }}{% endif %}<br>
+                        <strong>Details:</strong> {{ log.details }}<br>
+                        <small>Prev Hash: ...{{ log.previous_hash[-8:] }} | Block Hash: ...{{ log.block_hash[-8:] }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No audit logs found{% if role_filter %} for role '{{ role_filter }}'{% endif %}.</p>
+            {% endif %}
+        </main>
+
+    {% else %}
+        <main class="main-content-area"> {# Apply standard content area style #}
+            <div class="view-header"> <a href="{{ url_for('admin_logs.admin_dashboard_tiles') }}" class="back-link">...</a> </div>
+            <h2>Error</h2> <p>View not found...</p>
+        </main>
+    {% endif %}
+{% endblock %}
+
