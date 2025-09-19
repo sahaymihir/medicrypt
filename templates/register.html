@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Register - MediCrypt{% endblock %}
+
+{% block content %}
+    <h1>Create Patient Account</h1>
+    <!--
+      The form will call the validatePassword() function from the script below.
+      'return false' will stop the form from submitting.
+    -->
+    <form method="POST" action="{{ url_for('register') }}" onsubmit="return validatePassword()">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" required>
+        </div>
+        <!-- NEW FIELD FOR AGE -->
+        <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" required min="0" max="120">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <small style="font-size: 0.85em; color: #555;">(Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char)</small>
+        </div>
+        <!-- New "Confirm Password" field -->
+        <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+            <!-- This span will show the client-side error message -->
+            <span id="password-error" style="color: red; font-size: 0.9em; display: none;">Passwords do not match.</span>
+        </div>
+
+        <button type="submit" class="btn">Register</button>
+    </form>
+    <p class="text-center" style="margin-top: 20px;">
+        Already have an account? <a href="{{ url_for('login') }}" class="link">Login here</a>
+    </p>
+
+    <!--
+      Client-side validation script to check if passwords match.
+      This does NOT use alert().
+    -->
+    <script>
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            const errorSpan = document.getElementById('password-error');
+
+            if (password !== confirmPassword) {
+                errorSpan.style.display = 'block'; // Show the error
+                return false; // Stop form submission
+            } else {
+                errorSpan.style.display = 'none'; // Hide the error
+                return true; // Allow form submission
+            }
+        }
+    </script>
+{% endblock %}
+

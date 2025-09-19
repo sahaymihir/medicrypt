@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Dashboard - MediCrypt{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Reusing Doctor Dashboard Styles -->
+    <style>
+      :root {
+          --color-primary: #226da9;
+          --color-secondary: #edf6fa;
+          --color-accent: #28b094; /* Using Doctor accent */
+          --color-text: #223543;
+          --color-subtle-bg: #f7fafc;
+          --color-border: #dde6ee;
+          --color-danger: #d9534f;
+          --radius: 18px;
+          --shadow: 0 2px 12px rgba(34, 109, 169, 0.08), 0 1.5px 5px #cbe6fa33;
+          --popup-bg: #ffffff;
+          --popup-shadow: 0 8px 24px rgba(34,109,169,0.12);
+          --font-main: 'Inter', Arial, sans-serif;
+      }
+      body {
+          margin: 0; font-family: var(--font-main); background: var(--color-secondary);
+          color: var(--color-text); min-height: 100vh; display: flex; flex-direction: column;
+      }
+      .dashboard-container {
+          max-width: 1200px; width: 100%; margin: 0 auto; padding: 32px 16px 48px;
+          box-sizing: border-box; display: flex; flex-direction: column; flex-grow: 1;
+      }
+      /* --- Header Styles (Copied from Doctor/Admin Base for consistency) --- */
+       .dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 0 8px; margin-bottom: 32px; flex-wrap: wrap; }
+       .dashboard-title { font-size: 2rem; font-weight: 600; color: var(--color-primary); letter-spacing: 1px; display: flex; align-items: center; gap: 12px; margin-top: 3px; }
+       .dashboard-title i { color: var(--color-accent); font-size: 1.5rem; } /* Patient Accent */
+       .patient-menu { display: flex; align-items: center; gap: 16px; margin-top: 2px; position: relative; }
+       .patient-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; border-radius: 50px; background: var(--color-subtle-bg); transition: background 0.15s; border: 1px solid transparent; outline: none; }
+       .patient-profile:hover { background: #dbefff; border: 1px solid var(--color-border); }
+       .patient-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--color-primary); background: white; }
+       .patient-name { font-size: 1rem; font-weight: 500; color: var(--color-primary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+       .btn-logout { background: var(--color-danger); color: #fff; border: none; padding: 9px 20px; border-radius: 12px; font-weight: 500; font-size: 1rem; cursor: pointer; box-shadow: 0 2px 8px #e4717136; transition: background 0.15s; display: flex; align-items: center; gap: 10px; }
+       .btn-logout:hover { background: #b43634; }
+       /* Profile popup styles */
+       .profile-popup { position: absolute; right: 0; top: calc(100% + 12px); transform-origin: top right; min-width: 260px; background: var(--popup-bg); border-radius: 12px; box-shadow: var(--popup-shadow); border: 1px solid var(--color-border); padding: 14px; z-index: 40; display: none; }
+       .profile-popup.visible { display: block; animation: fadeIn .12s ease-out; }
+       .profile-popup header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+       .profile-popup .pp-name { font-weight:600; color:var(--color-primary); }
+       .profile-popup .pp-role { font-size:0.9rem; color:#556077; margin-top:-2px; }
+       .profile-popup .pp-item { font-size:0.95rem; color:var(--color-text); margin-top:8px; }
+       .profile-popup .pp-close { position:absolute; top:8px; right:8px; background:none; border:none; cursor:pointer; color:#8b98a6; font-size: 1.4rem; padding: 0; line-height: 1;}
+       @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+
+      /* --- Tile Styles (Copied from Doctor/Admin) --- */
+      .tiles-area { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; padding: 0 8px 36px 8px; margin: 0 auto; box-sizing: border-box; }
+      .tile { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 30px 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-width: 0; border: 1.5px solid var(--color-border); min-height: 160px; transition: box-shadow 0.17s, border 0.17s, transform 0.08s; position: relative; overflow: hidden; text-decoration: none; color: var(--color-text); }
+      .tile:hover { border: 1.5px solid var(--color-primary); box-shadow: 0 2px 26px #226da91c; transform: translateY(-3px); z-index:2; }
+      .tile-header { display:flex; align-items:center; gap:12px; font-size:1.25rem; font-weight:600; color:var(--color-primary); }
+      .tile-header i { color: var(--color-accent); font-size:1.17rem; width: 24px; text-align: center; }
+      .tile-details { font-size: 1rem; color:var(--color-text); line-height:1.45; font-weight:400; flex:1; margin-top: 5px; }
+       .tile-details strong { font-weight: 600; color: var(--color-primary); } /* Style for profile info */
+       .tile-details p { margin: 0 0 8px 0; } /* Spacing for profile info */
+      .tile-chevron { color:var(--color-primary); position:absolute; right:20px; top:36px; font-size:1.19rem; opacity: 0.6; transition: opacity 0.2s; }
+      .tile:hover .tile-chevron { opacity: 1;}
+      .tile:focus-visible { border:1.5px solid var(--color-accent); box-shadow:0 2px 22px #28b09423; outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+       /* --- List View Styles (For Prescriptions) --- */
+       .list-view-container { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 30px 24px; border: 1.5px solid var(--color-border); flex: 1; }
+       .view-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+       .view-header h2 { font-size: 1.5rem; font-weight: 600; color: var(--color-primary); margin: 0; display: flex; align-items: center; gap: 8px; }
+       .back-link { font-size: 1rem; color: var(--color-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+       .back-link:hover { text-decoration: underline; }
+       .prescription-list-ul { list-style: none; padding: 0; margin: 0; }
+       .prescription-list-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 12px; transition: background 0.15s; flex-wrap: wrap; }
+       .prescription-list-item:nth-child(odd) { background: var(--color-subtle-bg); }
+       .prescription-list-item:hover { background: #dbefff; }
+       .prescription-info { flex-grow: 1; margin-right: 15px; }
+       .prescription-doctor { font-weight: 500; font-size: 1.1rem; }
+       .prescription-date { font-size: 0.9rem; color: #556077; margin-top: 2px; }
+       /* General Button Styles */
+       .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 1rem; font-weight: 500; border-radius: 12px; cursor: pointer; text-decoration: none; border: none; transition: background 0.15s, box-shadow 0.15s; }
+       .btn-primary { background: var(--color-primary); color: white; }
+       .btn-primary:hover { background: #1a5a8f; box-shadow: 0 2px 8px #226da936; }
+       .btn-sm { padding: 8px 16px; font-size: 0.9rem; border-radius: 10px; }
+
+      /* --- Footer Styles --- */
+      .dashboard-footer { text-align: center; margin-top: auto; padding: 20px 0; border-top: 1px solid var(--color-border); color: #556077; font-size: 0.9em; width: 100%; }
+
+      /* --- Responsive --- */
+      @media (max-width: 1024px) { .tiles-area { grid-template-columns: repeat(2, 1fr); gap: 22px; } }
+      @media (max-width: 768px) { .tiles-area { grid-template-columns: 1fr; } }
+      @media (max-width: 640px) {
+          .dashboard-header { flex-direction: column; gap: 14px; align-items: stretch; }
+          .patient-menu { justify-content: space-between; }
+          .tiles-area { gap: 18px; padding: 0 10px; }
+          .tile { padding: 20px; min-height: 110px; }
+          .dashboard-container { padding: 20px 10px 30px;}
+          .prescription-list-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .prescription-list-item .btn { width: 100%; text-align: center; justify-content: center;}
+       }
+        /* Alert styles */
+       .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid transparent; }
+       .alert-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+       .alert-danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+       .alert-warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+       .alert-info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" role="main">
+    <header class="dashboard-header">
+        <div class="dashboard-title" aria-hidden="true">
+          <i class="fas fa-user-injured" aria-hidden="true"></i> <!-- Changed Icon -->
+          Medicrypt – Patient Portal
+        </div>
+        {% if user %}
+        <nav class="patient-menu" aria-label="Account actions">
+          <button class="btn-logout" type="button" aria-label="Logout" onclick="location.href='{{ url_for('logout') }}'">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+          </button>
+          <div class="patient-profile" id="patientProfileBtn" role="button" aria-haspopup="dialog" aria-expanded="false" tabindex="0">
+            <img src="https://placehold.co/40x40/226da9/fff?text={{ user.display_name[0] if user.display_name else 'P' }}" alt="Patient avatar" class="patient-avatar" />
+            <span class="patient-name">{{ user.display_name or user.username }}</span>
+            <i class="fas fa-chevron-down" style="font-size:1em; color:#636a72;" aria-hidden="true"></i>
+            <div class="profile-popup" id="profilePopup" role="dialog" aria-label="Patient details" aria-modal="false">
+              <button class="pp-close" id="ppCloseBtn" aria-label="Close profile details">&times;</button>
+              <header>
+                <img src="https://placehold.co/48x48/226da9/fff?text={{ user.display_name[0] if user.display_name else 'P' }}" alt="" style="width:48px;height:48px;border-radius:8px;border:2px solid var(--color-primary);" />
+                <div>
+                  <div class="pp-name">{{ user.display_name or user.username }}</div>
+                  <div class="pp-role">{{ user.role | capitalize if user.role else 'Patient' }}</div>
+                </div>
+              </header>
+              <div class="pp-item"><strong>Email:</strong> <span>{{ user.username }}</span></div>
+              {# Add profile info here too if available #}
+              {% if profile %}
+              <div class="pp-item"><strong>Smoking Status:</strong> <span>{{ profile.get('smoking_status', 'N/A') | capitalize }}</span></div>
+              {# Add decrypted age here later if needed #}
+              {% endif %}
+            </div>
+          </div>
+        </nav>
+        {% endif %}
+      </header>
+
+     <!-- Flash messages -->
+      <div class="flash-container" style="padding: 0 8px; margin-bottom: 24px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+      </div>
+
+    <!-- MAIN CONTENT AREA: Switches based on view -->
+    <div style="flex-grow: 1;"> {# Wrapper to allow content growth #}
+        {% if view == 'tiles' %}
+          <main class="tiles-area" aria-label="Dashboard tiles">
+            <!-- Prescriptions Tile -->
+            <a href="{{ url_for('dashboard', view='prescriptions') }}" class="tile" aria-label="View Prescriptions">
+              <div class="tile-header"><i class="fas fa-file-prescription" aria-hidden="true"></i> Prescriptions</div>
+              <div class="tile-details">View your past prescriptions and check their verification status.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+
+            <!-- Personal Info Tile -->
+            <div class="tile" aria-label="Personal Information">
+              <div class="tile-header"><i class="fas fa-id-card" aria-hidden="true"></i> Personal Info</div>
+              {# --- CORRECTED: Display profile info --- #}
+              <div class="tile-details">
+                  {% if profile %}
+                    <p><strong>Name:</strong> {{ profile.get('full_name', 'N/A') }}</p>
+                    <p><strong>Smoking Status:</strong> {{ profile.get('smoking_status', 'N/A') | capitalize }}</p>
+                    {# Add decrypted age here later if needed #}
+                  {% else %}
+                    <p>Your profile information is not available.</p>
+                  {% endif %}
+              </div>
+              {# No chevron needed for static info tile #}
+            </div>
+
+            <!-- Placeholder Tile 3 -->
+            <div class="tile" aria-label="Appointments (Coming Soon)" style="background: var(--color-subtle-bg); color: #889; opacity: 0.7; cursor: default;">
+              <div class="tile-header" style="color: #778;"><i class="fas fa-calendar-alt" aria-hidden="true" style="color: #aaa;"></i> Appointments</div>
+              <div class="tile-details">Manage upcoming appointments and view past visit history. (Coming Soon)</div>
+            </div>
+          </main>
+
+        {% elif view == 'prescriptions' %}
+          <main class="list-view-container" aria-label="Your Prescriptions">
+            <div class="view-header">
+                <a href="{{ url_for('dashboard') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                <h2><i class="fas fa-file-prescription" style="color: var(--color-accent); margin-right: 8px;"></i> Your Prescriptions</h2>
+            </div>
+            {% if records %}
+              <ul class="prescription-list-ul">
+                  {% for rx in records %}
+                  <li class="prescription-list-item">
+                      <div class="prescription-info">
+                          <div class="prescription-doctor">Prescription from Dr. {{ rx.doctor_name }}</div>
+                          <div class="prescription-date">Issued on {{ rx.created_at | string | truncate(19, True, '') }}</div>
+                          {# --- REMOVED Status Placeholder DIV --- #}
+                      </div>
+                      {# Link to the detailed view/verification page (doctor.view_prescription handles patient access) #}
+                      <a href="{{ url_for('doctor.view_prescription', record_id=rx.record_id) }}" class="btn btn-primary btn-sm"> View / Check Status <i class="fas fa-arrow-right"></i> </a>
+                  </li>
+                  {% endfor %}
+              </ul>
+            {% else %}
+                <p>No prescriptions found for your account.</p>
+            {% endif %}
+          </main>
+
+        {% else %}
+          <main class="list-view-container">
+              <h2>Error</h2> <p>Could not load view.</p>
+              <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+          </main>
+        {% endif %}
+    </div> {# End content wrapper #}
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        MediCrypt Secure Healthcare System &copy; 2025 | Contact: support@medicrypt.local
+    </footer>
+</div> {# End dashboard-container #}
+{% endblock %}
+
+
+{% block scripts %}
+    {{ super() }} {# Include scripts from base.html if any #}
+    {% if user %} {# Only add script if header is shown #}
+    <script>
+      // Profile Popup Script (Same as doctor/admin, adapted ID)
+      (function() {
+        const profileBtn = document.getElementById('patientProfileBtn'); // Changed ID
+        const popup = document.getElementById('profilePopup');
+        const closeBtn = document.getElementById('ppCloseBtn');
+        if (!profileBtn || !popup || !closeBtn) return;
+        function showPopup() { popup.classList.add('visible'); profileBtn.setAttribute('aria-expanded', 'true'); closeBtn.focus(); }
+        function hidePopup() { popup.classList.remove('visible'); profileBtn.setAttribute('aria-expanded', 'false'); if(document.activeElement === closeBtn || popup.contains(document.activeElement)) { profileBtn.focus(); } }
+        profileBtn.addEventListener('click', (e) => { e.stopPropagation(); if (popup.classList.contains('visible')) hidePopup(); else showPopup(); });
+        profileBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); profileBtn.click(); } else if (e.key === 'Escape' && popup.classList.contains('visible')) hidePopup(); });
+        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(); });
+        document.addEventListener('click', (e) => { if (popup.classList.contains('visible') && !profileBtn.contains(e.target) && !popup.contains(e.target)) hidePopup(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popup.classList.contains('visible')) hidePopup(); });
+      })();
+    </script>
+    {% endif %}
+{% endblock %}
+
