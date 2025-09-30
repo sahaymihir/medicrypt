@@ -1,0 +1,509 @@
+{% extends "doctor_base.html" %} {# Extend doctor layout #}
+
+{% block title %}Write Prescription - MediCrypt{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius); /* Use existing radius */
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--popup-shadow); /* Use existing shadow */
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+        .modal-header h2 {
+            margin-top: 0;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-body { margin-top: 20px; }
+        .modal-footer { margin-top: 25px; text-align: right; }
+
+         /* File Input Styling (similar to login) */
+         .file-input-wrapper {
+             position: relative;
+             overflow: hidden;
+             display: block;
+             width: 100%;
+             padding: 14px 16px;
+             border: 1px dashed var(--color-border); /* Dashed border */
+             border-radius: 10px;
+             background-color: var(--color-subtle-bg);
+             cursor: pointer;
+             text-align: center;
+             transition: border-color 0.2s, background-color 0.2s;
+             color: var(--color-subtle-text);
+             font-size: 0.95rem;
+         }
+         .file-input-wrapper:hover {
+             border-color: var(--color-primary);
+             background-color: #e6f0f7;
+         }
+         .file-input-wrapper input[type="file"] {
+             position: absolute;
+             left: 0;
+             top: 0;
+             opacity: 0; /* Make the default input invisible */
+             width: 100%;
+             height: 100%;
+             cursor: pointer;
+         }
+        .file-input-icon { margin-right: 8px; color: var(--color-accent); }
+        .file-name-display {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            font-style: italic;
+            display: block; /* Ensure it takes its own line */
+            min-height: 1.2em; /* Prevent layout shift */
+            text-align: left; /* Align text left */
+        }
+        /* Style for the form group inside the modal */
+        #modal-signing-key-placeholder .form-group {
+            margin-top: 15px; /* Add some space above */
+            margin-bottom: 0; /* Remove default bottom margin */
+        }
+        /* Style for displaying smoking status */
+        .patient-info-display {
+            font-size: 0.95rem; color: #556077; word-wrap: break-word; margin-bottom: 5px;
+        }
+        .patient-info-display strong { color: var(--color-primary); }
+
+    </style>
+{% endblock %}
+
+
+{% block doctor_content %} {# Use doctor content block #}
+<div class="main-content-area"> {# Wrap content #}
+    <div class="view-header">
+        {# Add back link using patient_detail view #}
+        <a href="{{ url_for('dashboard', view='patient_detail', id=patient.user_id) }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Patient File</a>
+        <h2><i class="fas fa-pen-alt" style="color: var(--color-accent); margin-right: 8px;"></i> New Prescription</h2>
+    </div>
+
+    <div style="background: var(--color-subtle-bg); border: 1px solid var(--color-border); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+        <h3 style="margin-top: 0; font-size: 1.3rem; color: var(--color-primary);">Patient: {{ patient.full_name }}</h3>
+        <p class="patient-info-display">Patient ID: {{ patient.user_id }}</p>
+        {# --- Display Smoking Status --- #}
+        <p class="patient-info-display"><strong>Smoking Status:</strong> {{ patient.smoking_status | capitalize if patient.smoking_status else 'Not Recorded' }}</p>
+        <p class="patient-info-display" style="font-size: 0.9em; margin-top: 5px;">Date: {{ today_date }}</p>
+    </div>
+
+    {# MODIFIED: Added id and enctype, removed onsubmit #}
+    <form action="{{ url_for('doctor.create_prescription') }}" method="POST" id="prescription-form" enctype="multipart/form-data">
+        <!-- Hidden input to pass patient_id -->
+        <input type="hidden" name="patient_id" value="{{ patient.user_id }}">
+
+        <h3 style="font-size: 1.25rem; font-weight: 600;">Vitals</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px 20px;">
+            <div class="form-group">
+                <label for="height">Height (cm)</label>
+                <input type="number" id="height" name="height">
+            </div>
+            <div class="form-group">
+                <label for="weight">Weight (kg)</label>
+                <input type="number" id="weight" name="weight">
+            </div>
+             {# --- UPDATED: Split Blood Pressure --- #}
+            <div class="form-group">
+                <label for="systolic_bp">Systolic BP (mmHg)</label>
+                <input type="number" id="systolic_bp" name="systolic_bp" min="50" max="300">
+            </div>
+            <div class="form-group">
+                <label for="diastolic_bp">Diastolic BP (mmHg)</label>
+                <input type="number" id="diastolic_bp" name="diastolic_bp" min="30" max="200">
+            </div>
+             {# --- END UPDATE --- #}
+            <div class="form-group">
+                <label for="heart_rate">Heart Rate (bpm)</label>
+                <input type="number" id="heart_rate" name="heart_rate">
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px dashed #eee; margin: 25px 0;">
+
+        <h3 style="font-size: 1.25rem; font-weight: 600;">Diagnosis</h3>
+        <div class="form-group">
+            <label for="diagnosis">Primary Diagnosis</label>
+            <input type="text" id="diagnosis" name="diagnosis" required>
+        </div>
+        <div class="form-group">
+            <label for="cause">Suspected Cause</label>
+            <textarea id="cause" name="cause" rows="3" class="text-area"></textarea> {# Assuming text-area has base styles #}
+        </div>
+
+        <hr style="border: none; border-top: 1px dashed #eee; margin: 25px 0;">
+
+        <!-- DYNAMIC MEDICINE LIST -->
+        <h3 style="font-size: 1.25rem; font-weight: 600;">Medication List</h3>
+         <div class="medicine-header-row" style="display: grid; grid-template-columns: 3fr 0.75fr 2fr 0.5fr; gap: 10px; margin-bottom: 8px; font-weight: bold; font-size: 0.9em; color: var(--color-subtle-text); padding: 0 5px;">
+             <div>Medicine</div>
+             <div>Frequency</div>
+             <div>Remarks</div>
+             <div>Action</div>
+         </div>
+        <div id="medicine-list-container">
+            <!-- Template Row Structure (no labels here) -->
+            <div class="medicine-row-template" style="display: none;">
+                 <div class="form-group" style="margin: 0;">
+                    <select name="medicine_name" class="form-group input medicine-select" style="width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; box-sizing: border-box; background: white; font-size: 1rem;">
+                        {% for med in medicines %}
+                            <option value="{{ med.name }} {{ med.strength }}">{{ med.name }} ({{ med.strength }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    {# Removed required from template #}
+                    <input type="text" name="frequency" class="frequency-input" placeholder="e.g., 1-0-1" maxlength="5">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <input type="text" name="remarks" placeholder="e.g., After food">
+                </div>
+                 <div style="display: flex; align-items: center; justify-content: center;" class="remove-btn-container">
+                     {# Button added by JS #}
+                 </div>
+            </div>
+        </div>
+        <button type="button" id="add-medicine" class="btn btn-secondary btn-sm" style="margin-top: 10px;">+ Add Medicine</button>
+        <!-- END LIST -->
+
+        <hr style="border: none; border-top: 1px dashed #eee; margin: 25px 0;">
+
+        <div class="form-group">
+            <label for="notes">Additional Notes</label>
+            <textarea id="notes" name="notes" rows="4" class="text-area"></textarea>
+        </div>
+
+        <!-- Hidden file input that WILL BE submitted with the form -->
+        <div class="form-group" id="signing-key-form-group" style="display: none;">
+            <label for="signing_private_key_file">Signing Private Key (.pem)</label>
+            {# Removed required attribute #}
+            <input type="file" id="signing_private_key_file" name="signing_private_key_file" accept=".pem">
+            <small>This key is required to sign the prescription.</small>
+        </div>
+
+
+        {# Button to trigger the modal #}
+        <button type="button" id="sign-encrypt-button" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 1.1em; margin-top: 20px;">
+             <i class="fas fa-signature"></i> Digitally Sign and Encrypt Prescription
+        </button>
+    </form>
+</div>{# End main-content-area #}
+
+<!-- The Modal -->
+<div id="signingModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button" id="modal-close-button">&times;</span>
+    <div class="modal-header">
+        <h2><i class="fas fa-key"></i> Provide Signing Key</h2>
+    </div>
+    <div class="modal-body">
+      <p>Please select your private key file (.pem) to digitally sign this prescription.</p>
+      {# Placeholder for the VISIBLE file input inside the modal #}
+      <div id="modal-signing-key-placeholder">
+          <div class="form-group">
+             <div class="file-input-wrapper">
+                 <span id="modal-file-label-text"><i class="fas fa-upload file-input-icon"></i> Choose your .pem key file...</span>
+                 {# This is the VISIBLE input the user interacts with IN THE MODAL #}
+                 <input type="file" id="modal_signing_key_input" accept=".pem"> {# Removed name, added ID #}
+             </div>
+             <span id="modal-file-name-display" class="file-name-display"></span>
+             <small>This key is required to sign the prescription.</small>
+          </div>
+      </div>
+      {# Error message placeholder #}
+      <p id="signing-key-error" style="color: var(--color-danger); font-size: 0.9em; display: none; margin-top: 10px;">Please select your private key file.</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" id="modal-cancel-button" class="btn btn-secondary" style="background: #aaa;">Cancel</button>
+      <button type="button" id="modal-submit-button" class="btn btn-primary">Sign & Submit</button> {# Trigger form submission via JS #}
+    </div>
+  </div>
+</div>
+
+
+{# Add scripts for modal and file input display #}
+{% block scripts %}
+    {{ super() }} {# Include scripts from doctor_base.html #}
+    <script>
+        // --- Declare medicineRowCount ONLY ONCE here ---
+        let medicineRowCount = 0;
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // --- Modal Variables ---
+            const modal = document.getElementById('signingModal');
+            const form = document.getElementById('prescription-form');
+            // --- Get references to BOTH file inputs ---
+            const hiddenSigningKeyInput = document.getElementById('signing_private_key_file'); // Inside form, hidden
+            const modalSigningKeyInput = document.getElementById('modal_signing_key_input'); // Inside modal, visible
+            // --- Get references to MODAL's display elements ---
+            const modalFileNameDisplay = document.getElementById('modal-file-name-display');
+            const modalFileLabelText = document.getElementById('modal-file-label-text');
+            // --- Other modal elements ---
+            const signingKeyError = document.getElementById('signing-key-error');
+            const signEncryptButton = document.getElementById('sign-encrypt-button');
+            const modalCloseButton = document.getElementById('modal-close-button');
+            const modalCancelButton = document.getElementById('modal-cancel-button');
+            const modalSubmitButton = document.getElementById('modal-submit-button');
+
+            // --- Check if all elements exist ---
+            if (!modal || !form || !hiddenSigningKeyInput || !modalSigningKeyInput || !modalFileNameDisplay || !modalFileLabelText || !signingKeyError || !signEncryptButton || !modalCloseButton || !modalCancelButton || !modalSubmitButton) {
+                console.error("One or more elements required for the signing modal are missing!");
+                if (signEncryptButton) {
+                    signEncryptButton.disabled = true;
+                    signEncryptButton.textContent = 'Error: Modal elements missing';
+                }
+            }
+
+
+            // --- Modal Functions ---
+            function showSigningModal() {
+                // Check main form validity BEFORE showing modal
+                if (!form.checkValidity()) {
+                    // Find the first invalid element that is VISIBLE
+                    const firstInvalid = form.querySelector(':invalid:not([style*="display: none"])');
+                    if (firstInvalid) {
+                        // Optionally scroll to it
+                        // firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Focus might work better if it's not hidden
+                        firstInvalid.focus();
+                    }
+                    form.reportValidity(); // Show native validation messages
+                    return;
+                }
+                if (modal) modal.style.display = 'flex';
+            }
+
+            function hideSigningModal() {
+                if (modal) modal.style.display = 'none';
+                if (signingKeyError) signingKeyError.style.display = 'none';
+                // Don't clear modal input on cancel/close, only on submit
+                // if (modalSigningKeyInput) modalSigningKeyInput.value = '';
+                // if (modalFileNameDisplay) modalFileNameDisplay.textContent = '';
+                // if (modalFileLabelText) modalFileLabelText.innerHTML = '<i class="fas fa-upload file-input-icon"></i> Choose your .pem key file...';
+            }
+
+            function submitPrescriptionWithKey() {
+                // Check if a file is selected in the HIDDEN input
+                if (!hiddenSigningKeyInput || hiddenSigningKeyInput.files.length === 0) {
+                    if (signingKeyError) signingKeyError.style.display = 'block'; // Show error IN MODAL
+                    return; // Stop submission
+                }
+                if (signingKeyError) signingKeyError.style.display = 'none';
+                if (form) form.submit(); // Submit the MAIN form
+            }
+
+            // --- Event Listener for MODAL file input change ---
+            if (modalSigningKeyInput && hiddenSigningKeyInput) {
+                modalSigningKeyInput.addEventListener('change', function(event) {
+                    if (event.target.files && event.target.files.length > 0) {
+                        const selectedFile = event.target.files[0];
+
+                        // Update modal UI
+                        if (modalFileNameDisplay) modalFileNameDisplay.textContent = 'Selected: ' + selectedFile.name;
+                        if (modalFileLabelText) modalFileLabelText.innerHTML = '<i class="fas fa-check-circle file-input-icon" style="color: var(--color-success);"></i> File Selected';
+                        if (signingKeyError) signingKeyError.style.display = 'none';
+
+                        // --- Crucial Step: Copy the file to the hidden input ---
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(selectedFile);
+                        hiddenSigningKeyInput.files = dataTransfer.files;
+                        // --- End Crucial Step ---
+
+                    } else {
+                        // Clear modal UI if file is deselected
+                        if (modalFileNameDisplay) modalFileNameDisplay.textContent = '';
+                        if (modalFileLabelText) modalFileLabelText.innerHTML = '<i class="fas fa-upload file-input-icon"></i> Choose your .pem key file...';
+
+                        // --- Also clear the hidden input ---
+                        hiddenSigningKeyInput.value = ''; // Reset file selection
+                        // --- End Clear ---
+                    }
+                });
+            }
+
+
+            // --- Modal Button Event Listeners ---
+            if (signEncryptButton) {
+                signEncryptButton.addEventListener('click', showSigningModal);
+            }
+            if (modalCloseButton) {
+                modalCloseButton.addEventListener('click', hideSigningModal);
+            }
+            if (modalCancelButton) {
+                modalCancelButton.addEventListener('click', hideSigningModal);
+            }
+            if (modalSubmitButton) {
+                modalSubmitButton.addEventListener('click', submitPrescriptionWithKey);
+            }
+
+
+            // Close modal if user clicks outside of it
+            window.addEventListener('click', function(event) {
+                if (modal && event.target == modal) {
+                    hideSigningModal();
+                }
+            });
+            // Close with Escape key
+            window.addEventListener('keydown', function(event) {
+                if (modal && modal.style.display === 'flex' && event.key === 'Escape') {
+                    hideSigningModal();
+                }
+            });
+
+
+            // --- Medicine Row Variables & Functions ---
+            const container = document.getElementById('medicine-list-container');
+            const templateElement = container ? container.querySelector('.medicine-row-template') : null;
+            const templateRowHtml = templateElement ? templateElement.innerHTML : null;
+            const addMedButton = document.getElementById('add-medicine');
+
+             if (!container || !templateElement || !templateRowHtml || !addMedButton) {
+                console.error("One or more elements required for medicine rows are missing.");
+            }
+
+
+            function applyFrequencyMask(inputElement) {
+                 if (!inputElement) return;
+                 inputElement.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/[^0-9]/g, '');
+                    let formattedValue = '';
+                    if (value.length > 0) formattedValue += value.substring(0, 1);
+                    if (value.length >= 1) formattedValue += '-';
+                    if (value.length > 1) formattedValue += value.substring(1, 2);
+                    if (value.length >= 2) formattedValue += '-';
+                    if (value.length > 2) formattedValue += value.substring(2, 3);
+                    e.target.value = formattedValue;
+                });
+                inputElement.addEventListener('keydown', function(e) {
+                    const cursorPos = e.target.selectionStart;
+                    const value = e.target.value;
+                    if (e.key === 'Backspace' && value[cursorPos - 1] === '-') e.preventDefault();
+                    if (e.key === 'Delete' && value[cursorPos] === '-') e.preventDefault();
+                });
+            }
+
+            function addMedicineRow() {
+                medicineRowCount++;
+
+                if (!container || !templateRowHtml) {
+                     console.error("Cannot add medicine row: container or template missing.");
+                     return;
+                }
+
+                const newRow = document.createElement('div');
+                newRow.className = 'medicine-row';
+                newRow.style.display = 'grid';
+                newRow.style.gridTemplateColumns = '3fr 0.75fr 2fr 0.5fr';
+                newRow.style.gap = '10px';
+                newRow.style.alignItems = 'center';
+                newRow.style.marginBottom = '15px';
+                newRow.innerHTML = templateRowHtml;
+
+                const freqInput = newRow.querySelector('.frequency-input');
+                if(freqInput) {
+                    freqInput.required = true; // Add required dynamically
+                    applyFrequencyMask(freqInput);
+                } else {
+                     console.error("Frequency input not found in new medicine row.");
+                }
+
+
+                const removeButtonContainer = newRow.querySelector('.remove-btn-container');
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.innerHTML = '<i class="fas fa-times"></i>';
+                removeButton.className = 'btn btn-secondary btn-sm';
+                 removeButton.style.padding = '8px 10px';
+                 removeButton.style.lineHeight = '1';
+                 removeButton.style.background = '#e74c3c';
+                 removeButton.style.color = 'white';
+                 removeButton.style.width = '100%';
+                 removeButton.style.fontSize = '0.9em';
+                 removeButton.setAttribute('aria-label', 'Remove medicine row');
+                removeButton.onclick = function() {
+                    if (container.querySelectorAll('.medicine-row').length > 1) {
+                        container.removeChild(newRow);
+                    } else {
+                         // Clear the fields of the last row instead of removing it
+                         const medSelect = newRow.querySelector('.medicine-select');
+                         const remarksInput = newRow.querySelector('input[name="remarks"]');
+                         if (medSelect) medSelect.selectedIndex = 0;
+                         if (freqInput) {
+                             freqInput.value = '';
+                             // Keep required=true for the first/only row
+                         }
+                         if (remarksInput) remarksInput.value = '';
+                    }
+                };
+
+                if(removeButtonContainer) {
+                    removeButtonContainer.appendChild(removeButton);
+                } else {
+                    console.error("Could not find remove button container in template for new row.");
+                }
+
+                container.appendChild(newRow);
+                // Ensure the first row's frequency input is required immediately
+                if (medicineRowCount === 1 && freqInput) {
+                    freqInput.required = true;
+                }
+
+            }
+
+            // Start with ONE row only if the container exists
+            if (container && templateRowHtml) {
+                 addMedicineRow(); // Call only once
+            }
+
+            // Add listener for the "Add Medicine" button
+            if(addMedButton) {
+                addMedButton.addEventListener('click', addMedicineRow);
+            } else {
+                console.error("Add medicine button not found.");
+            }
+
+            if (!form) console.error("Prescription form not found");
+
+
+        }); // --- END DOMContentLoaded ---
+    </script>
+{% endblock %}
+{% endblock %}

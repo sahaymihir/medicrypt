@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Medicrypt | {% block title %}Doctor Dashboard{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Consistent Variables */
+      --color-primary: #226da9;
+      --color-secondary: #edf6fa;
+      --color-accent: #28b094;
+      --color-text: #223543;
+      --color-subtle-bg: #f7fafc;
+      --color-border: #dde6ee;
+      --color-danger: #d9534f;
+      --radius: 18px;
+      --shadow: 0 2px 12px rgba(34, 109, 169, 0.08), 0 1.5px 5px #cbe6fa33;
+      --popup-bg: #ffffff;
+      --popup-shadow: 0 8px 24px rgba(34,109,169,0.12);
+      --font-main: 'Inter', Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-main);
+      background: var(--color-secondary);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex; /* Added for footer push */
+      flex-direction: column; /* Added for footer push */
+    }
+
+    #component-container { /* This might not be needed if body takes flex */
+      background: var(--color-secondary);
+      flex-grow: 1; /* Make container take available space */
+      display: flex; /* Use flex for centering dashboard-container */
+      flex-direction: column;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      width: 100%; /* Take full width up to max */
+      margin: 0 auto; /* Center horizontally */
+      padding: 32px 16px 48px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1; /* Allow content to grow */
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 0 8px;
+      margin-bottom: 32px;
+      flex-wrap: wrap; /* Allow wrapping */
+    }
+
+    .dashboard-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 3px;
+    }
+
+    .dashboard-title i { color: var(--color-accent); font-size: 1.5rem; }
+
+    .doctor-menu {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 2px;
+      position: relative;
+    }
+
+    .doctor-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 50px;
+      background: var(--color-subtle-bg);
+      transition: background 0.15s;
+      border: 1px solid transparent;
+      outline: none;
+    }
+
+    .doctor-profile:hover { background: #dbefff; border: 1px solid var(--color-border); }
+    .doctor-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      object-fit: cover; border: 2px solid var(--color-primary); background: white;
+    }
+    .doctor-name {
+      font-size: 1rem; font-weight: 500; color: var(--color-primary);
+      max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .btn-logout {
+      background: var(--color-danger); color: #fff; border: none;
+      padding: 9px 20px; border-radius: 12px; font-weight: 500; font-size: 1rem;
+      cursor: pointer; box-shadow: 0 2px 8px #e4717136; transition: background 0.15s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .btn-logout:hover { background: #b43634; }
+
+    /* Tile Styles - Matched from Admin for Consistency */
+     .tiles-area {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 34px;
+        padding: 0 8px 36px 8px; /* Added bottom padding */
+        margin: 0 auto;
+        box-sizing: border-box;
+     }
+     .tile {
+        background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 30px 24px; display: flex; flex-direction: column; align-items: flex-start;
+        gap: 12px; min-width: 0; border: 1.5px solid var(--color-border); min-height: 160px; /* Adjusted height */
+        transition: box-shadow 0.17s, border 0.17s, transform 0.08s;
+        position: relative; overflow: hidden; text-decoration: none; color: var(--color-text);
+     }
+     .tile:hover {
+         border: 1.5px solid var(--color-primary);
+         box-shadow: 0 2px 26px #226da91c;
+         transform: translateY(-3px); z-index:2;
+     }
+     .tile-header {
+         display:flex; align-items:center; gap:12px;
+         font-size:1.25rem; font-weight:600; /* Consistent Size */
+         color:var(--color-primary);
+     }
+     .tile-header i {
+         color: var(--color-accent); font-size:1.17rem; /* Consistent Size */
+         width: 24px; text-align: center;
+     }
+     .tile-details {
+         font-size: 1rem; /* Consistent Size */
+         color:var(--color-text); line-height:1.45; /* Consistent line height */
+         font-weight:400; flex:1; margin-top: 5px;
+     }
+     .tile-chevron {
+         color:var(--color-primary); position:absolute; right:20px;
+         top:36px; font-size:1.19rem; opacity: 0.6; transition: opacity 0.2s;
+     }
+     .tile:hover .tile-chevron { opacity: 1;}
+     /* Accessible Focus */
+     .tile:focus-visible {
+         border:1.5px solid var(--color-accent);
+         box-shadow:0 2px 22px #28b09423;
+         outline: 2px solid var(--color-accent); outline-offset: 2px;
+     }
+
+
+    /* List View Styles */
+    .list-view-container, .detail-view-container, .insights-container { /* Added insights-container */
+        background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+        padding: 30px 24px; border: 1.5px solid var(--color-border);
+        flex: 1; /* Allow list view to take space */
+    }
+    .view-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .view-header h2 {
+        font-size: 1.5rem; font-weight: 600; color: var(--color-primary);
+        margin: 0; display: flex; align-items: center; gap: 8px;
+    }
+    .back-link {
+        font-size: 1rem; color: var(--color-primary); text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px; margin-right: auto;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    /* Search Form */
+    .search-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;} /* Allow wrapping */
+    .search-input {
+        padding: 10px 15px; border: 1px solid var(--color-border);
+        border-radius: 10px; font-size: 1rem; min-width: 250px; flex-grow: 1; /* Allow input to grow */
+    }
+    .search-select { /* Style for select dropdown */
+        padding: 10px 15px; border: 1px solid var(--color-border);
+        border-radius: 10px; font-size: 1rem; background-color: white;
+    }
+    .search-button { padding: 10px 20px; }
+
+
+    /* Patient List & Prescription List */
+    .patient-list, .prescription-list-ul, .search-results-list { /* Added search-results-list */
+         list-style: none; padding: 0; margin: 0;
+    }
+    .patient-list-item, .prescription-list-item, .search-result-item { /* Added search-result-item */
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px; border-radius: 12px; transition: background 0.15s; flex-wrap: wrap; /* Allow wrap */
+    }
+    .patient-list-item:nth-child(odd),
+    .prescription-list-item:nth-child(odd),
+    .search-result-item:nth-child(odd) { background: var(--color-subtle-bg); } /* Added search-result-item */
+
+    .patient-list-item:hover,
+    .prescription-list-item:hover,
+    .search-result-item:hover { background: #dbefff; } /* Added search-result-item */
+
+    .patient-name, .prescription-title { font-weight: 500; font-size: 1.1rem; }
+    .patient-info { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; /* Wrap name/age */}
+    .patient-age { font-size: 0.9rem; color: #556077; }
+    .patient-id, .prescription-subtitle, .result-details { /* Added result-details */
+        font-size: 0.9rem; color: #556077; margin-top: 2px;
+    }
+    .result-info { flex-grow: 1; margin-right: 15px; } /* For search results */
+
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+      font-size: 1rem; font-weight: 500; border-radius: 12px; cursor: pointer;
+      text-decoration: none; border: none; transition: background 0.15s, box-shadow 0.15s;
+    }
+    .btn-primary { background: var(--color-primary); color: white; }
+    .btn-primary:hover { background: #1a5a8f; box-shadow: 0 2px 8px #226da936; }
+    .btn-secondary { background: var(--color-accent); color: white; }
+    .btn-secondary:hover { background: #209a80; box-shadow: 0 2px 8px #28b09436; }
+    .btn-sm { padding: 8px 16px; font-size: 0.9rem; border-radius: 10px; }
+
+    /* Patient Detail */
+    .patient-detail-header {
+        border-bottom: 1px solid var(--color-border); padding-bottom: 20px; margin-bottom: 20px;
+        display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; /* Allow wrap */
+    }
+    .patient-detail-actions { display: flex; gap: 12px; margin-top: 10px; /* Add space when wrapped */ }
+    .prescription-list h3 { font-size: 1.2rem; color: var(--color-primary); margin-bottom: 12px; }
+
+    /* Insights Section */
+    .insights-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px dashed var(--color-border); }
+    .insights-section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0;}
+    .insights-section h3 { font-size: 1.25rem; font-weight: 600; color: var(--color-primary); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;}
+    .search-results-table { /* Simple table for results */
+        width: 100%; border-collapse: collapse; margin-top: 15px;
+    }
+    .search-results-table th, .search-results-table td {
+        text-align: left; padding: 10px; border-bottom: 1px solid var(--color-border);
+    }
+    .search-results-table th { font-weight: 600; font-size: 0.9rem; color: #556077; }
+    .search-results-table tr:last-child td { border-bottom: none; }
+    .stat-result-box {
+        background-color: var(--color-subtle-bg); border: 1px solid var(--color-border);
+        border-radius: 8px; padding: 15px; margin-top: 15px;
+        word-wrap: break-word; /* Wrap long results */
+    }
+    .stat-result-box strong { color: var(--color-primary); }
+
+
+    /* Flash Messages */
+    .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid transparent; font-size: 0.95rem; }
+    .alert-success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+    .alert-danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    .alert-warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+    .alert-info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .tiles-area { grid-template-columns: repeat(2, 1fr); gap: 22px; }
+    }
+    @media (max-width: 768px) {
+      .tiles-area { grid-template-columns: 1fr; }
+      .search-form { width: 100%; }
+      .search-input { flex-grow: 1; min-width: 0;}
+      .view-header { flex-direction: column; align-items: flex-start; }
+      .back-link { margin-right: 0; margin-bottom: 10px; }
+    }
+    @media (max-width: 640px) {
+      .dashboard-header { flex-direction: column; gap: 14px; align-items: stretch; }
+      .doctor-menu { justify-content: space-between; }
+      .tiles-area { gap: 18px; padding: 0 10px; }
+      .tile { padding: 20px; min-height: 110px; }
+      .patient-list-item, .prescription-list-item, .search-result-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .patient-list-item .btn, .prescription-list-item .btn, .search-result-item .btn { width: 100%; text-align: center; justify-content: center;}
+      .patient-detail-header { flex-direction: column; gap: 16px; }
+      .patient-detail-actions { width: 100%; display: grid; grid-template-columns: 1fr; }
+      .search-form .search-input, .search-form .search-select, .search-form .search-button { width: 100%; min-width: unset; } /* Stack search elements */
+    }
+
+    /* Profile popup */
+    .profile-popup {
+      position: absolute; right: 0; top: calc(100% + 12px); transform-origin: top right;
+      min-width: 260px; background: var(--popup-bg); border-radius: 12px;
+      box-shadow: var(--popup-shadow); border: 1px solid var(--color-border);
+      padding: 14px; z-index: 40; display: none;
+    }
+    .profile-popup.visible { display: block; animation: fadeIn .12s ease-out; }
+    .profile-popup header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .profile-popup .pp-name { font-weight:600; color:var(--color-primary); }
+    .profile-popup .pp-role { font-size:0.9rem; color:#556077; margin-top:-2px; }
+    .profile-popup .pp-item { font-size:0.95rem; color:var(--color-text); margin-top:8px; }
+    .profile-popup .pp-close { position:absolute; top:8px; right:8px; background:none; border:none; cursor:pointer; color:#8b98a6; font-size: 1.4rem; padding:0; line-height: 1;}
+
+    @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform:none; } }
+
+    /* Footer Styles */
+    .dashboard-footer {
+        text-align: center;
+        margin-top: auto; /* Push footer to bottom */
+        padding: 20px 0;
+        border-top: 1px solid var(--color-border);
+        color: #556077;
+        font-size: 0.9em;
+        width: 100%; /* Ensure footer spans width */
+    }
+
+  </style>
+</head>
+<body>
+  <div id="component-container"> {# Main container #}
+    <div class="dashboard-container" role="main">
+      <header class="dashboard-header">
+        <div class="dashboard-title" aria-hidden="true">
+          <i class="fas fa-user-md" aria-hidden="true"></i>
+          Medicrypt – Doctor Dashboard
+        </div>
+
+        <nav class="doctor-menu" aria-label="Account actions">
+          <button class="btn-logout" type="button" aria-label="Logout" onclick="location.href='{{ url_for('logout') }}'">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+            Logout
+          </button>
+
+          <!-- Profile button -->
+          {% if user %}
+          <div class="doctor-profile" id="doctorProfileBtn" role="button" aria-haspopup="dialog" aria-expanded="false" tabindex="0">
+            <img src="https://placehold.co/40x40/226da9/fff?text={{ user.display_name[0] if user.display_name else 'D' }}"
+                alt="Doctor avatar" class="doctor-avatar" />
+            <span class="doctor-name" id="doctorName"> {{ user.display_name or user.username }} </span>
+            <i class="fas fa-chevron-down" style="font-size:1em; color:#636a72;" aria-hidden="true"></i>
+
+            <!-- Profile popup -->
+            <div class="profile-popup" id="profilePopup" role="dialog" aria-label="Doctor details" aria-modal="false">
+              <button class="pp-close" id="ppCloseBtn" aria-label="Close profile details">&times;</button>
+              <header>
+                <img src="https://placehold.co/48x48/226da9/fff?text={{ user.display_name[0] if user.display_name else 'D' }}" alt=""
+                    style="width:48px;height:48px;border-radius:8px;border:2px solid var(--color-primary);" />
+                <div>
+                  <div class="pp-name" id="ppName">{{ user.display_name or user.username }}</div>
+                  <div class="pp-role" id="ppRole">{{ user.role|capitalize if user.role else 'Doctor' }}</div>
+                </div>
+              </header>
+              <div class="pp-item"><strong>Email:</strong> <span id="ppEmail">{{ user.username }}</span></div>
+              <div class="pp-item"><strong>Organization:</strong> <span id="ppOrg">{{ user.attributes.get('hospital', 'N/A') }}</span></div>
+              <div class="pp-item"><strong>Department:</strong> <span id="ppDept">{{ user.attributes.get('department', 'N/A') }}</span></div>
+            </div>
+          </div>
+          {% endif %}
+        </nav>
+      </header>
+
+      <!-- Flash messages -->
+      <div class="flash-container" style="padding: 0 8px; margin-bottom: 24px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+      </div>
+
+
+      <!-- MAIN CONTENT AREA: Switches based on view -->
+      <div style="flex-grow: 1;"> {# Wrapper to allow content growth #}
+        {% if view == 'tiles' %}
+          <main class="tiles-area" aria-label="Dashboard tiles">
+            <!-- Patients Tile -->
+            <a href="{{ url_for('dashboard', view='patients') }}" class="tile" aria-label="Patients">
+              <div class="tile-header"><i class="fas fa-users" aria-hidden="true"></i> Patients</div>
+              <div class="tile-details">View patient list, search records, and manage patient details.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+            <!-- Insights Tile -->
+            <a href="{{ url_for('dashboard', view='insights') }}" class="tile" aria-label="Insights & Stats"> {# Made active #}
+              <div class="tile-header"><i class="fas fa-chart-bar" aria-hidden="true"></i> Insights & Stats</div>
+              <div class="tile-details">Perform encrypted searches and view privacy-preserving statistics.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+            <!-- Prescriptions Tile -->
+            <a href="{{ url_for('dashboard', view='prescriptions') }}" class="tile" aria-label="Prescriptions">
+              <div class="tile-header"><i class="fas fa-file-prescription" aria-hidden="true"></i> Prescriptions</div>
+              <div class="tile-details">Review past prescriptions you have issued and create new ones.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+          </main>
+        {% elif view == 'patients' %}
+          <main class="list-view-container" aria-label="Patient list">
+            <div class="view-header">
+                <a href="{{ url_for('dashboard') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                <form method="GET" action="{{ url_for('dashboard') }}" class="search-form">
+                    <input type="hidden" name="view" value="patients">
+                    <input type="search" name="search_query" class="search-input" placeholder="Search patients by name..." value="{{ search_query or '' }}">
+                    <button type="submit" class="btn btn-primary search-button"> <i class="fas fa-search"></i> Search </button>
+                </form>
+            </div>
+            <h2><i class="fas fa-users" style="color: var(--color-accent); margin-right: 8px;"></i> All Patients</h2>
+            {% if patients %}
+              <ul class="patient-list">
+                  {% for patient in patients %}
+                  <li class="patient-list-item">
+                      <div>
+                          <div class="patient-info">
+                              <div class="patient-name">{{ patient.full_name }}</div>
+                              {% if patient.age is not none %} <div class="patient-age">(Age: {{ patient.age }})</div> {% endif %}
+                          </div>
+                          <div class="patient-id">ID: ...{{ patient.user_id[-12:] }}</div>
+                      </div>
+                      <a href="{{ url_for('dashboard', view='patient_detail', id=patient.user_id) }}" class="btn btn-primary btn-sm"> View Details <i class="fas fa-arrow-right"></i> </a>
+                  </li>
+                  {% endfor %}
+              </ul>
+            {% else %}
+                {% if search_query %} <p>No patients found matching "{{ search_query }}".</p>
+                {% else %} <p>No patients found.</p> {% endif %}
+            {% endif %}
+          </main>
+        {% elif view == 'patient_detail' and patient_detail %}
+          <main class="detail-view-container" aria-label="Patient details for {{ patient_detail.full_name }}">
+            <div class="view-header">
+                <a href="{{ url_for('dashboard', view='patients') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Patient List</a>
+            </div>
+            <div class="patient-detail-header">
+                <div>
+                    <h2 style="margin: 0 0 8px 0;">{{ patient_detail.full_name }}</h2>
+                    <div class="patient-id">ID: ...{{ patient_detail.user_id[-12:] }}</div>
+                    <div class="patient-age" style="margin-top: 4px;">
+                        {% if patient_detail.age is not none %} <strong>Age:</strong> {{ patient_detail.age }}
+                        {% else %} <strong>Age:</strong> Not Available {% endif %}
+                    </div>
+                </div>
+                <div class="patient-detail-actions">
+                    <a href="{{ url_for('doctor.write_prescription', patient_id=patient_detail.user_id) }}" class="btn btn-secondary"> <i class="fas fa-pen"></i> Create New Prescription </a>
+                </div>
+            </div>
+            <div class="prescription-list">
+                <h3>Past Prescriptions</h3>
+                {% if prescriptions %}
+                    <ul class="prescription-list-ul">
+                    {% for rx in prescriptions %}
+                        <li class="prescription-list-item">
+                            <div>
+                                <div class="prescription-title">Prescription from {{ rx.created_at | string | truncate(10, True, '') }}</div>
+                                <div class="prescription-subtitle">By Dr. {{ rx.doctor_name or 'Unknown' }}</div>
+                            </div>
+                            <a href="{{ url_for('doctor.view_prescription', record_id=rx.record_id) }}" class="btn btn-primary btn-sm"> <i class="fas fa-eye"></i> View / Verify </a>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %} <p>No past prescriptions found.</p> {% endif %}
+            </div>
+          </main>
+        {% elif view == 'prescriptions' %}
+          <main class="list-view-container" aria-label="My Prescriptions">
+            <div class="view-header">
+                <a href="{{ url_for('dashboard') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            </div>
+            <h2><i class="fas fa-file-prescription" style="color: var(--color-accent); margin-right: 8px;"></i> Prescriptions You Created</h2>
+            <div class="prescription-list">
+                 {% if prescriptions %}
+                    <ul class="prescription-list-ul">
+                    {% for rx in prescriptions %}
+                        <li class="prescription-list-item">
+                            <div>
+                                <div class="prescription-title">For {{ rx.patient_name }}</div>
+                                <div class="prescription-subtitle">Issued on {{ rx.created_at | string | truncate(10, True, '') }}</div>
+                            </div>
+                            <a href="{{ url_for('doctor.view_prescription', record_id=rx.record_id) }}" class="btn btn-primary btn-sm"> <i class="fas fa-eye"></i> View / Verify </a>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                {% else %} <p>You have not created any prescriptions.</p> {% endif %}
+            </div>
+          </main>
+        {% elif view == 'insights' %}
+          <main class="insights-container" aria-label="Insights and Statistics">
+              <div class="view-header">
+                  <a href="{{ url_for('dashboard') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                  <h2><i class="fas fa-chart-bar" style="color: var(--color-accent); margin-right: 8px;"></i> Insights & Stats</h2>
+              </div>
+
+              <!-- Encrypted Keyword Search Section -->
+              <section class="insights-section">
+                  <h3><i class="fas fa-search"></i> Encrypted Keyword Search</h3>
+                  <form method="POST" action="{{ url_for('doctor.doctor_keyword_search') }}" class="search-form">
+                      <select name="search_type" class="search-select">
+                          <option value="diagnosis" {% if last_search_type == 'diagnosis' %}selected{% endif %}>Diagnosis</option>
+                          <option value="cause" {% if last_search_type == 'cause' %}selected{% endif %}>Cause</option>
+                          {# Add smoking_status later if needed #}
+                      </select>
+                      <input type="search" name="search_keyword" class="search-input" placeholder="Enter keyword..." value="{{ last_search_keyword or '' }}" required>
+                      <button type="submit" class="btn btn-primary search-button">Search Records</button>
+                  </form>
+
+                  {% if search_results is defined %}
+                      <div class="search-results" style="margin-top: 20px;">
+                          <h4>Search Results for "{{ last_search_keyword }}" ({{ last_search_type|capitalize }}):</h4>
+                          {% if search_results %}
+                              <table class="search-results-table">
+                                  <thead>
+                                      <tr>
+                                          <th>Record ID</th>
+                                          <th>Patient Name</th>
+                                          <th>Date</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                  {% for result in search_results %}
+                                      <tr>
+                                          <td>...{{ result.record_id[-12:] }}</td>
+                                          <td>{{ result.patient_name }}</td>
+                                          <td>{{ result.created_at | string | truncate(19, True, '') }}</td>
+                                      </tr>
+                                  {% endfor %}
+                                  </tbody>
+                              </table>
+                          {% else %}
+                              <p>No records found matching your query.</p>
+                          {% endif %}
+                      </div>
+                  {% endif %}
+              </section>
+
+              <!-- Statistics Section -->
+              <section class="insights-section">
+                  <h3><i class="fas fa-calculator"></i> Privacy-Preserving Statistics</h3>
+                  <p>Calculate aggregate statistics over encrypted data.</p>
+
+                  {# --- BP for Heart Patients --- #}
+                  {# --- UPDATED ACTION URL --- #}
+                  <form method="POST" action="{{ url_for('doctor_stats.doctor_stats_bp_heart_patients') }}" style="margin-bottom: 15px;">
+                       <button type="submit" class="btn btn-secondary btn-sm">Calculate Avg BP for 'Heart Disease' Patients</button>
+                  </form>
+
+                  {# --- Pulse by Smoking Status --- #}
+                  {# --- UPDATED ACTION URL --- #}
+                  <form method="POST" action="{{ url_for('doctor_stats.doctor_stats_pulse_smoking') }}" class="search-form">
+                      <select name="smoking_status_filter" class="search-select" required>
+                          <option value="" disabled selected>Select Smoking Status...</option>
+                          <option value="smoker">Smoker</option>
+                          <option value="non-smoker">Non-Smoker</option>
+                          <option value="former">Former Smoker</option>
+                      </select>
+                      <button type="submit" class="btn btn-secondary btn-sm">Calculate Avg Pulse</button>
+                  </form>
+                  {# --- END UPDATES --- #}
+
+
+                  {# --- Display Stat Results --- #}
+                  {% if stats_results %}
+                      <div class="stat-result-box">
+                          <h4>Last Calculation: {{ stats_results.query }}</h4>
+                          <p>{{ stats_results.result }}</p>
+                          {# Optionally show count, DP info etc. #}
+                          {# <p><small>Based on X records. Epsilon = Y.</small></p> #}
+                      </div>
+                  {% endif %}
+
+              </section>
+          </main>
+        {% else %}
+          <main class="list-view-container">
+              <h2>Error</h2> <p>Could not load view.</p>
+              <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+          </main>
+        {% endif %}
+      </div> {# End content wrapper #}
+
+    </div> {# End dashboard-container #}
+    <!-- Footer Added -->
+    <footer class="dashboard-footer">
+        MediCrypt Secure Healthcare System &copy; 2025 | Contact: support@medicrypt.local
+    </footer>
+  </div> {# End component-container #}
+
+  <script>
+    // Profile Popup Script
+    (function() {
+      const profileBtn = document.getElementById('doctorProfileBtn');
+      const popup = document.getElementById('profilePopup');
+      const closeBtn = document.getElementById('ppCloseBtn');
+      if (!profileBtn || !popup || !closeBtn) return;
+      function showPopup() { popup.classList.add('visible'); profileBtn.setAttribute('aria-expanded', 'true'); closeBtn.focus(); }
+      function hidePopup() { popup.classList.remove('visible'); profileBtn.setAttribute('aria-expanded', 'false'); if(document.activeElement === closeBtn || popup.contains(document.activeElement)) { profileBtn.focus(); } }
+      profileBtn.addEventListener('click', (e) => { e.stopPropagation(); if (popup.classList.contains('visible')) hidePopup(); else showPopup(); });
+      profileBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); profileBtn.click(); } else if (e.key === 'Escape' && popup.classList.contains('visible')) hidePopup(); });
+      closeBtn.addEventListener('click', (e) => { e.stopPropagation(); hidePopup(); });
+      document.addEventListener('click', (e) => { if (popup.classList.contains('visible') && !profileBtn.contains(e.target) && !popup.contains(e.target)) hidePopup(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && popup.classList.contains('visible')) hidePopup(); });
+    })();
+  </script>
+</body>
+</html>
