@@ -1,0 +1,123 @@
+{% extends "pharmacist_base.html" %} {# Extend the NEW pharmacist base template #}
+
+{# --- REMOVED block head - Styles are now in pharmacist_base.html --- #}
+
+{% block pharmacist_content %} {# Use the content block defined in pharmacist_base.html #}
+
+    {# --- Conditional Rendering based on 'view' --- #}
+    {% if view == 'tiles' %}
+        {# --- TILES VIEW --- #}
+        <main class="tiles-area" aria-label="Dashboard options">
+            <!-- Verify Prescriptions Tile -->
+            <a href="{{ url_for('dashboard', view='verify_prescription') }}" class="tile" aria-label="Verify Prescriptions">
+              <div class="tile-header"><i class="fas fa-check-double" aria-hidden="true"></i> Verify Prescriptions</div>
+              <div class="tile-details">Review incoming prescriptions, verify doctor signatures, and dispense medication.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+
+            <!-- Billing Info Tile (Placeholder) -->
+            <div class="tile" aria-label="Billing Information (Placeholder)" style="background: var(--color-subtle-bg); color: #889; opacity: 0.7; cursor: default;">
+              <div class="tile-header" style="color: #778;"><i class="fas fa-file-invoice-dollar" aria-hidden="true" style="color: #aaa;"></i> Billing Info</div>
+              <div class="tile-details">Check billing status or insurance approvals associated with prescriptions. (Placeholder)</div>
+            </div>
+
+            <!-- Dispensing Log Tile -->
+            <a href="{{ url_for('dashboard', view='dispensing_log') }}" class="tile" aria-label="Dispensing Log">
+              <div class="tile-header"><i class="fas fa-history" aria-hidden="true"></i> Dispensing Log</div>
+              <div class="tile-details">View a log of all prescriptions you have dispensed through the system.</div>
+              <i class="fas fa-chevron-right tile-chevron" aria-hidden="true"></i>
+            </a>
+        </main>
+
+    {% elif view == 'verify_prescription' %}
+        {# --- PRESCRIPTION LIST VIEW (Modified) --- #}
+        <main class="list-view-container" aria-label="Prescriptions List">
+            <div class="view-header">
+                 <a href="{{ url_for('dashboard', view='tiles') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                <div>
+                     <h2><i class="fas fa-check-double" style="color: var(--color-accent); margin-right: 8px;"></i> Prescriptions</h2>
+                     <p>Select a prescription to view details and verify the signature.</p>
+                </div>
+            </div>
+
+            {% if prescriptions %}
+                <ul class="prescription-list">
+                    {% for rx in prescriptions %}
+                    {# Simpler list item, no status shown here #}
+                    <li class="prescription-item">
+                        <div class="rx-header">
+                             <div class="rx-info">
+                                 <div class="rx-patient-name">Patient: {{ rx.patient_name }}</div>
+                                 <div class="rx-ids">
+                                     Record ID: <code>...{{ rx.record_id[-12:] }}</code> |
+                                     Issued: {{ rx.created_at | string | truncate(10, True, '') }} {# Show date #}
+                                </div>
+                             </div>
+                             {# View/Verify Button Linking to New Route #}
+                             <div class="rx-actions">
+                                 <a href="{{ url_for('pharmacist.pharmacist_verify_details', record_id=rx.record_id) }}" class="btn btn-primary btn-sm">
+                                     <i class="fas fa-eye"></i> View / Verify
+                                 </a>
+                             </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No prescriptions found or accessible.</p>
+            {% endif %}
+        </main>
+
+    {% elif view == 'dispensing_log' %}
+        {# --- DISPENSING LOG VIEW (No change needed here) --- #}
+        <main class="list-view-container" aria-label="Dispensing Log">
+            <div class="view-header">
+                 <a href="{{ url_for('dashboard', view='tiles') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+                 <div>
+                    <h2><i class="fas fa-history" style="color: var(--color-accent); margin-right: 8px;"></i> Your Dispensing Log</h2>
+                    <p>Showing prescriptions you have marked as dispensed.</p>
+                 </div>
+            </div>
+
+            {% if dispensing_log %}
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Dispensed At (IST)</th>
+                            <th>Record ID</th>
+                            <th>Patient Name</th>
+                            <th>Patient ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in dispensing_log %}
+                        <tr>
+                            <td>{{ log.timestamp[:19] }}</td> {# Truncate microseconds/offset #}
+                            <td><code>...{{ log.record_id[-12:] }}</code></td>
+                            <td>{{ log.patient_name or 'N/A' }}</td>
+                            <td><code>...{{ log.patient_user_id[-12:] }}</code></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>You have not dispensed any prescriptions yet.</p>
+            {% endif %}
+        </main>
+
+    {% else %}
+        {# --- DEFAULT/FALLBACK VIEW --- #}
+         <main class="list-view-container">
+              <div class="view-header">
+                   <a href="{{ url_for('dashboard', view='tiles') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+                   <h2>Error</h2>
+              </div>
+              <p>Invalid view requested.</p>
+         </main>
+    {% endif %}
+    {# --- End Conditional Rendering --- #}
+
+{% endblock %} {# End block pharmacist_content #}
+
+{# --- REMOVED scripts block - Handled by pharmacist_base.html --- #}
+

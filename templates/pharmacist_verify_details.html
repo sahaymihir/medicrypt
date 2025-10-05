@@ -1,0 +1,170 @@
+{% extends "pharmacist_base.html" %}
+
+{% block title %}Verify Prescription Details - MediCrypt{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Add specific styles for this verification page -->
+    <style>
+        .verification-container {
+            /* Use main content area style */
+            background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 30px 24px; border: 1.5px solid var(--color-border);
+        }
+        .rx-section {
+            margin-bottom: 24px;
+            border-bottom: 1px dashed var(--color-border);
+            padding-bottom: 24px;
+        }
+        .rx-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .rx-section h3 {
+            font-size: 1.25rem; font-weight: 600; color: var(--color-primary);
+            margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px;
+        }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+        .info-item strong { display: block; font-size: 0.9rem; color: #556077; font-weight: 500; margin-bottom: 4px; }
+
+        /* Signature Status Box */
+        .status-box {
+            padding: 16px; border-radius: 8px; display: flex; align-items: center;
+            gap: 12px; font-size: 1.1rem; font-weight: 600; margin-top: 10px;
+        }
+        .status-box.valid { background: #e9f7ec; color: #20803d; border: 1px solid #a3d9b1; }
+        .status-box.invalid { background: #fdeeee; color: #c93430; border: 1px solid #f5b9b7; }
+        .status-box.dispensed { background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+        .status-box i { font-size: 1.5rem; }
+
+        /* Medication List */
+        .med-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .med-table th, .med-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--color-border); }
+        .med-table th { font-size: 0.9rem; color: #556077; font-weight: 600; }
+        .med-table tr:last-child td { border-bottom: none; }
+        .med-name { font-weight: 600; }
+        .med-freq { font-family: monospace; font-size: 1.1rem; font-weight: 600; color: var(--color-primary); }
+
+        .dispense-actions { margin-top: 25px; }
+
+        @media (max-width: 600px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+{% endblock %}
+
+
+{% block pharmacist_content %}
+    <div class="verification-container">
+        <div class="view-header">
+            {# Link back to the prescription list view #}
+            <a href="{{ url_for('dashboard', view='verify_prescription') }}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Prescription List</a>
+             <h2><i class="fas fa-file-medical" style="color: var(--color-accent); margin-right: 8px;"></i> Prescription Details</h2>
+        </div>
+
+        {# Display error message if verification/decryption failed #}
+        {% if error_message %}
+            <div class="alert alert-danger">
+                <strong>Error:</strong> {{ error_message }}
+            </div>
+        {% endif %}
+
+        {% if prescription %}
+            <!-- Section: Patient & Doctor -->
+            <section class="rx-section">
+                <h3><i class="fas fa-user-injured"></i> Basic Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Patient Name</strong>
+                        {{ prescription.patient_name }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Prescribing Doctor</strong>
+                        Dr. {{ prescription.doctor_name }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Date Issued</strong>
+                        {{ prescription.date_issued }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Record ID</strong>
+                        <code>...{{ record_id[-12:] }}</code>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Medication -->
+            <section class="rx-section">
+                <h3><i class="fas fa-pills"></i> Medication</h3>
+                <table class="med-table">
+                    <thead>
+                        <tr>
+                            <th>Medication</th>
+                            <th>Frequency</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if prescription.medicines %}
+                            {% for med in prescription.medicines %}
+                            <tr>
+                                <td class="med-name">{{ med.medicine }}</td>
+                                <td class="med-freq">{{ med.frequency }}</td>
+                                <td>{{ med.remarks or 'N/A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center;">No medications listed.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Section: Status & Actions -->
+            <section class="rx-section">
+                 <h3><i class="fas fa-shield-alt"></i> Status & Actions</h3>
+                 {# Display Signature Status #}
+                 {% if is_valid_signature %}
+                    <div class="status-box valid">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Digital Signature: VALID</span>
+                    </div>
+                 {% else %}
+                    <div class="status-box invalid">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Digital Signature: INVALID or Verification Error</span>
+                    </div>
+                 {% endif %}
+
+                 {# Display Dispensed Status #}
+                 {% if is_dispensed %}
+                    <div class="status-box dispensed" style="margin-top: 10px;">
+                        <i class="fas fa-history"></i>
+                        <span>Medication already marked as DISPENSED.</span>
+                    </div>
+                 {% endif %}
+
+                 {# Dispense Button Area #}
+                 <div class="dispense-actions">
+                     {% if is_valid_signature and not is_dispensed %}
+                         <form action="{{ url_for('pharmacist.dispense_prescription', record_id=record_id) }}" method="POST" onsubmit="return confirm('Confirm dispensing this prescription? This action will be logged.');">
+                             <button type="submit" class="btn btn-success">
+                                 <i class="fas fa-pills"></i> Mark as Dispensed
+                             </button>
+                         </form>
+                     {% elif is_dispensed %}
+                         <button type="button" class="btn btn-secondary" disabled><i class="fas fa-check"></i> Already Dispensed</button>
+                     {% else %}
+                          <button type="button" class="btn btn-secondary" disabled><i class="fas fa-times"></i> Cannot Dispense (Invalid Signature)</button>
+                     {% endif %}
+                 </div>
+            </section>
+
+        {% elif not error_message %}
+            {# Case where prescription is None but no specific error was set #}
+             <div class="alert alert-warning">
+                Could not load prescription details. The record might be empty or inaccessible.
+            </div>
+        {% endif %} {# End prescription check #}
+
+    </div>
+{% endblock %}
