@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Prescription - {{ record_id }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #226da9;
+            --color-secondary: #edf6fa;
+            --color-accent: #28b094; /* Default accent (doctor) */
+            --color-text: #223543;
+            --color-subtle-text: #556077;
+            --color-border: #dde6ee;
+            --color-danger: #d9534f;
+            --color-success: #28a745;
+            --radius: 12px;
+            --font-main: 'Inter', Arial, sans-serif;
+            --font-serif: 'Merriweather', serif;
+        }
+        body {
+            font-family: var(--font-main);
+            background: var(--color-secondary);
+            color: var(--color-text);
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(34,109,169,0.1);
+            border: 1px solid var(--color-border);
+            overflow: hidden;
+        }
+        .rx-header {
+            background: var(--color-primary);
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .rx-header h1 {
+            font-family: var(--font-serif);
+            font-size: 2.25rem;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+        .rx-header i {
+            font-size: 3rem;
+            opacity: 0.8;
+        }
+        .rx-body {
+            padding: 32px;
+        }
+        .rx-section {
+            margin-bottom: 24px;
+            border-bottom: 1px dashed var(--color-border);
+            padding-bottom: 24px;
+        }
+        .rx-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .rx-section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+        }
+        .info-item {
+            font-size: 1rem;
+        }
+        .info-item strong {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--color-subtle-text);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        /* Signature Status Box */
+        .status-box {
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .status-box.valid {
+            background: #e9f7ec;
+            color: #20803d;
+            border: 1px solid #a3d9b1;
+        }
+        .status-box.invalid {
+            background: #fdeeee;
+            color: #c93430;
+            border: 1px solid #f5b9b7;
+        }
+         .status-box.not-checked { /* Style for when verification couldn't run */
+             background: #fff3cd; /* Warning color */
+             color: #856404;
+             border: 1px solid #ffeeba;
+         }
+        .status-box i {
+            font-size: 1.5rem;
+        }
+
+        /* Vitals Grid */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px 20px;
+        }
+
+        /* Medication List */
+        .med-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        .med-table th, .med-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .med-table th {
+            font-size: 0.9rem;
+            color: var(--color-subtle-text);
+            font-weight: 600;
+        }
+        .med-table tr:last-child td {
+            border-bottom: none;
+        }
+        .med-name {
+            font-weight: 600;
+        }
+        .med-freq {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .notes-box {
+            background: var(--color-secondary);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .notes-box p:first-child { margin-top: 0; }
+        .notes-box p:last-child { margin-bottom: 0; }
+
+        .back-link-container { margin-top: 32px; } /* Wrapper for back link */
+        .back-link {
+            display: inline-block;
+            /* margin-top: 32px; */ /* Removed from link itself */
+            font-size: 1rem;
+            color: var(--color-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+         /* Alert for decryption/verification errors */
+         .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; border: 1px solid transparent; font-size: 0.95rem; }
+         .alert-danger { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+         .alert-warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
+
+        @media (max-width: 600px) {
+            body { padding: 20px 10px; }
+            .rx-header { padding: 20px; flex-direction: column; gap: 12px; text-align: center; }
+            .rx-header h1 { font-size: 1.75rem; }
+            .rx-body { padding: 20px; }
+            .info-grid { grid-template-columns: 1fr; }
+            .vitals-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="rx-header">
+            <h1>Kasturba Medical College</h1>
+            <i class="fas fa-hospital"></i>
+        </header>
+
+        <div class="rx-body">
+
+            {# Display specific error messages if decryption/verification failed #}
+            {% if error_message %}
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> {{ error_message }}
+                </div>
+            {% endif %}
+            {% if decryption_status_detail and decryption_status_detail != 'Success' and not error_message %}
+                 <div class="alert alert-warning">
+                     <strong>Decryption Status:</strong> {{ decryption_status_detail }}
+                 </div>
+            {% endif %}
+
+
+            <!-- Section: Signature Verification -->
+            <section class="rx-section">
+                <h2><i class="fas fa-shield-alt"></i> Record Security</h2>
+                {# Use more detailed status #}
+                {% if verification_status_detail == 'Valid' %}
+                    <div class="status-box valid">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Digital Signature: VALID. This record is authentic and has not been tampered with.</span>
+                    </div>
+                {% elif verification_status_detail == 'INVALID / TAMPERED' %}
+                    <div class="status-box invalid">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Digital Signature: INVALID. This record may have been tampered with or corrupted.</span>
+                    </div>
+                {% else %} {# Catch 'Cannot Verify', 'Error', 'Not Checked' etc. #}
+                     <div class="status-box not-checked">
+                         <i class="fas fa-question-circle"></i>
+                         <span>Digital Signature: {{ verification_status_detail }}.</span>
+                    </div>
+                {% endif %}
+            </section>
+
+            {# Only show details if content could be loaded #}
+            {% if prescription %}
+                <!-- Section: Patient Details -->
+                <section class="rx-section">
+                    <h2><i class="fas fa-user-injured"></i> Patient Information</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Full Name</strong>
+                            {{ patient.full_name or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Patient ID</strong>
+                             ...{{ patient.user_id[-12:] if patient.user_id else 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Date Issued</strong>
+                            {{ prescription.date_issued or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Age at Issuance</strong>
+                            {# Use age potentially added during decryption #}
+                            {{ prescription.age or patient.age or 'N/A' }}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Prescribing Doctor -->
+                <section class="rx-section">
+                    <h2><i class="fas fa-user-md"></i> Prescribing Doctor</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Doctor Name</strong>
+                            Dr. {{ prescribing_doctor.full_name or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Department</strong>
+                            {{ prescribing_doctor.department or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Specialty</strong>
+                            {{ prescribing_doctor.specialty or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Hospital</strong>
+                            {{ prescribing_doctor.hospital_id or 'N/A' }}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Diagnosis & Vitals -->
+                <section class="rx-section">
+                    <h2><i class="fas fa-stethoscope"></i> Diagnosis & Vitals</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Primary Diagnosis</strong>
+                            {{ prescription.diagnosis or 'N/A' }}
+                        </div>
+                        <div class="info-item">
+                            <strong>Suspected Cause</strong>
+                            {{ prescription.cause or 'N/A' }}
+                        </div>
+                    </div>
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin: 20px 0 12px 0;">Vitals at Time of Visit</h3>
+                    <div class="vitals-grid">
+                        <div class="info-item">
+                            <strong>Heart Rate</strong>
+                            {{ prescription.heart_rate or 'N/A' }} bpm
+                        </div>
+                        <div class="info-item">
+                            <strong>Blood Pressure</strong>
+                            {# --- FIX: Display systolic/diastolic --- #}
+                            {% if prescription.systolic_bp is not none and prescription.diastolic_bp is not none %}
+                                {{ prescription.systolic_bp }} / {{ prescription.diastolic_bp }} mmHg
+                            {% else %}
+                                N/A
+                            {% endif %}
+                            {# --- END FIX --- #}
+                        </div>
+                        <div class="info-item">
+                            <strong>Weight</strong>
+                            {{ prescription.weight_kg or 'N/A' }} kg
+                        </div>
+                        <div class="info-item">
+                            <strong>Height</strong>
+                            {{ prescription.height_cm or 'N/A' }} cm
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Medication -->
+                <section class="rx-section">
+                    <h2><i class="fas fa-pills"></i> R<sub style="font-size: 0.8rem; margin-left: -2px;">x</sub> - Medication</h2>
+                    <table class="med-table">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Frequency</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if prescription.medicines %}
+                                {% for med in prescription.medicines %}
+                                <tr>
+                                    <td class="med-name">{{ med.medicine }}</td>
+                                    <td class="med-freq">{{ med.frequency }}</td>
+                                    <td>{{ med.remarks or 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" style="text-align: center;">No medications prescribed.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Section: Notes -->
+                {% if prescription.notes %}
+                <section class="rx-section">
+                    <h2><i class="fas fa-clipboard"></i> Additional Notes</h2>
+                    <div class="notes-box">
+                        <p>{{ prescription.notes }}</p>
+                    </div>
+                </section>
+                {% endif %}
+
+            {% else %}
+                {# Message if content couldn't be loaded even if decryption status wasn't 'Failed' #}
+                <p>Could not display prescription content.</p>
+            {% endif %}
+
+
+            <!-- Footer & Back Link (Dynamically choose based on user role) -->
+            <div class="back-link-container">
+                {# --- UPDATED BACK LINK LOGIC --- #}
+                {% if session.role == 'doctor' %}
+                    <a href="{{ url_for('dashboard', view='patient_detail', id=patient.user_id) }}" class="back-link">
+                        <i class="fas fa-arrow-left"></i> Back to Patient File
+                    </a>
+                 {% elif session.role == 'patient' %}
+                     <a href="{{ url_for('dashboard', view='prescriptions') }}" class="back-link">
+                         <i class="fas fa-arrow-left"></i> Back to My Prescriptions
+                     </a>
+                 {% else %} {# Fallback for other roles if they can view this #}
+                      <a href="{{ url_for('dashboard') }}" class="back-link">
+                          <i class="fas fa-arrow-left"></i> Back to Dashboard
+                      </a>
+                 {% endif %}
+                 {# --- END UPDATE --- #}
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
